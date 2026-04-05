@@ -4,6 +4,7 @@ import com.finance.tracker.dto.request.LoginRequest;
 import com.finance.tracker.dto.request.RegisterRequest;
 import com.finance.tracker.dto.response.AuthResponse;
 import com.finance.tracker.entity.User;
+import com.finance.tracker.enums.Role;
 import com.finance.tracker.repository.UserRepository;
 import com.finance.tracker.security.JwtUtil;
 import com.finance.tracker.security.UserPrincipal;
@@ -32,7 +33,7 @@ public class AuthService {
 				.name(request.getName())
 				.email(request.getEmail())
 				.password(passwordEncoder.encode(request.getPassword()))
-				.role(request.getRole())
+				.role(Role.VIEWER)
 				.build();
 		User saved = userRepository.save(user);
 		UserPrincipal principal = new UserPrincipal(saved);
