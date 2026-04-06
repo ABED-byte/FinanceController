@@ -12,6 +12,7 @@ import com.finance.tracker.enums.TransactionType;
 import com.finance.tracker.repository.SavingsGoalRepository;
 import com.finance.tracker.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +33,10 @@ public class DashboardService {
 
 	private final TransactionRepository transactionRepository;
 	private final SavingsGoalRepository savingsGoalRepository;
-	private final AuthUserAccessor authUserAccessor;
+	public final AuthUserAccessor authUserAccessor;
 
 	@Transactional(readOnly = true)
+	@Cacheable(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id")
 	public DashboardSummaryResponse summary() {
 		User user = authUserAccessor.requireCurrentUser();
 		BigDecimal totalIncome = nullToZero(
@@ -73,6 +75,7 @@ public class DashboardService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(value = "dashboard_trends", key = "#root.target.authUserAccessor.requireCurrentUser().id")
 	public List<MonthlyTrendResponse> trendsLastSixMonths() {
 		User user = authUserAccessor.requireCurrentUser();
 		YearMonth end = YearMonth.now();
@@ -100,8 +103,8 @@ public class DashboardService {
 			String key = cursor.toString();
 			result.add(MonthlyTrendResponse.builder()
 					.month(key)
-					.income(nullToZero(incomeByMonth.get(key)))
-					.expenses(nullToZero(expenseByMonth.get(key)))
+					.income(incomeByMonth.getOrDefault(key, BigDecimal.ZERO))
+					.expenses(expenseByMonth.getOrDefault(key, BigDecimal.ZERO))
 					.build());
 		}
 		return result;

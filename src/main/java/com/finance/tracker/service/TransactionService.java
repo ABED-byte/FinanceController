@@ -10,6 +10,8 @@ import com.finance.tracker.exception.ResourceNotFoundException;
 import com.finance.tracker.repository.CategoryRepository;
 import com.finance.tracker.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +25,13 @@ public class TransactionService {
 
 	private final TransactionRepository transactionRepository;
 	private final CategoryRepository categoryRepository;
-	private final AuthUserAccessor authUserAccessor;
+	public final AuthUserAccessor authUserAccessor;
 
 	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id"),
+			@CacheEvict(value = "dashboard_trends", key = "#root.target.authUserAccessor.requireCurrentUser().id")
+	})
 	public TransactionResponse create(TransactionRequest request) {
 		User user = authUserAccessor.requireCurrentUser();
 		Category category = categoryRepository.findByIdAndUserId(request.getCategoryId(), user.getId())
@@ -66,6 +72,10 @@ public class TransactionService {
 	}
 
 	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id"),
+			@CacheEvict(value = "dashboard_trends", key = "#root.target.authUserAccessor.requireCurrentUser().id")
+	})
 	public TransactionResponse update(Long id, TransactionRequest request) {
 		User user = authUserAccessor.requireCurrentUser();
 		Transaction tx = transactionRepository.findActiveByIdAndUserId(id, user.getId())
@@ -81,6 +91,10 @@ public class TransactionService {
 	}
 
 	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id"),
+			@CacheEvict(value = "dashboard_trends", key = "#root.target.authUserAccessor.requireCurrentUser().id")
+	})
 	public void softDelete(Long id) {
 		User user = authUserAccessor.requireCurrentUser();
 		Transaction tx = transactionRepository.findActiveByIdAndUserId(id, user.getId())

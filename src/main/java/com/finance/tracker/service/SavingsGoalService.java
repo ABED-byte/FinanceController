@@ -10,6 +10,7 @@ import com.finance.tracker.exception.ResourceNotFoundException;
 import com.finance.tracker.repository.SavingsGoalRepository;
 import com.finance.tracker.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +25,10 @@ public class SavingsGoalService {
 
 	private final SavingsGoalRepository savingsGoalRepository;
 	private final TransactionRepository transactionRepository;
-	private final AuthUserAccessor authUserAccessor;
+	public final AuthUserAccessor authUserAccessor;
 
 	@Transactional
+	@CacheEvict(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id")
 	public SavingsGoalResponse create(SavingsGoalRequest request) {
 		User user = authUserAccessor.requireCurrentUser();
 		SavingsGoal goal = SavingsGoal.builder()

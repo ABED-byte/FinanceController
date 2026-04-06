@@ -8,6 +8,9 @@ import com.finance.tracker.entity.User;
 import com.finance.tracker.exception.ResourceNotFoundException;
 import com.finance.tracker.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +21,13 @@ import java.util.List;
 public class CategoryService {
 
 	private final CategoryRepository categoryRepository;
-	private final AuthUserAccessor authUserAccessor;
+	public final AuthUserAccessor authUserAccessor;
 
 	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "categories", key = "#root.target.authUserAccessor.requireCurrentUser().id"),
+			@CacheEvict(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id")
+	})
 	public CategoryResponse create(CategoryRequest request) {
 		User user = authUserAccessor.requireCurrentUser();
 		Category category = Category.builder()
@@ -33,6 +40,7 @@ public class CategoryService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(value = "categories", key = "#root.target.authUserAccessor.requireCurrentUser().id")
 	public List<CategoryResponse> listForCurrentUser() {
 		User user = authUserAccessor.requireCurrentUser();
 		return categoryRepository.findByUserIdOrderByNameAsc(user.getId()).stream()
@@ -41,6 +49,10 @@ public class CategoryService {
 	}
 
 	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "categories", key = "#root.target.authUserAccessor.requireCurrentUser().id"),
+			@CacheEvict(value = "dashboard_summary", key = "#root.target.authUserAccessor.requireCurrentUser().id")
+	})
 	public CategoryResponse updateBudget(Long id, CategoryBudgetUpdateRequest request) {
 		User user = authUserAccessor.requireCurrentUser();
 		Category category = categoryRepository.findByIdAndUserId(id, user.getId())
