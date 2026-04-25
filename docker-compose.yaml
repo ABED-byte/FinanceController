@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.4
+    container_name: finance-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: finance_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: finance_user
+      MYSQL_PASSWORD: finance_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: finance-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .
+    container_name: finance-app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/finance_db?createDatabaseIfNotExist=true&useSSL=false
+      - DB_USERNAME=finance_user
+      - DB_PASSWORD=finance_pass
+      - REDIS_HOST=redis
+      - JWT_SECRETKEY=dGhpc2lzYXZlcnlzZWN1cmVzZWNyZXRrZXlmb3Jqd3RzaWduaW5ncHVycG9zZXM= # Base64 for "thisisaverysecuresecretkeyforjwtsigningpurposes"
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  db_data:
